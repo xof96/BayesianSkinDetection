@@ -26,7 +26,6 @@ def is_skin(x, sk_means, sk_covs, sk_w, nsk_means, nsk_covs, nsk_w, th=0.5, dim=
     return c >= th
 
 
-
 # CONSTANTS
 SKIN_MEAN = np.array([[73.53, 29.94, 17.76],
                       [249.71, 233.94, 217.49],
