@@ -1,30 +1,5 @@
 import numpy as np
-
-
-def p(x, mean, cov, dim=3):
-    cov_mat = np.diag(cov)
-    inv_cov = np.linalg.inv(cov_mat)
-    det_cov = np.linalg.det(cov_mat)
-    a = 1 / np.sqrt(np.power(2 * np.pi, dim) * det_cov)
-    b = -1 / 2 * np.transpose(x - mean) * inv_cov * (x - mean)
-    return a * np.exp(b)
-
-
-def total_p(x, means, covs, w, dim=3):
-    n_weights = w.size
-    total_p = 0
-    for i in range(n_weights):
-        curr_p = w[i] * p(x, means[i], covs[i], dim)
-        total_p += curr_p
-    return total_p
-
-
-def is_skin(x, sk_means, sk_covs, sk_w, nsk_means, nsk_covs, nsk_w, th=0.5, dim=3):
-    skin_p = total_p(x, sk_means, sk_covs, sk_w, dim)
-    no_skin_p = total_p(x, nsk_means, nsk_covs, nsk_w, dim)
-    c = skin_p / no_skin_p
-    return c >= th
-
+from scipy.stats import multivariate_normal
 
 # CONSTANTS
 SKIN_MEAN = np.array([[73.53, 29.94, 17.76],
@@ -128,3 +103,25 @@ NO_SKIN_WEIGHT = np.array([0.0637,
                            0.0389,
                            0.0943,
                            0.0477])
+
+
+def total_p(x, means, covs, w):
+    n_weights = w.size
+    sum_p = 0
+    for i in range(n_weights):
+        mean = means[i]
+        cov = np.diag(covs[i])
+        curr_p = w[i] * multivariate_normal.pdf(x, mean=mean, cov=cov)
+        sum_p += curr_p
+    return sum_p
+
+
+def is_skin(x, sk_means=SKIN_MEAN, sk_covs=SKIN_COV, sk_w=SKIN_WEIGHT, nsk_means=NO_SKIN_MEAN, nsk_covs=NO_SKIN_COV,
+            nsk_w=NO_SKIN_WEIGHT, th=0.5):
+    h, w, ch = x.shape
+    skin_p = total_p(x, sk_means, sk_covs, sk_w)
+    no_skin_p = total_p(x, nsk_means, nsk_covs, nsk_w)
+    c = skin_p / no_skin_p
+    res = np.zeros(shape=(h, w))
+    res[c >= th] = 1
+    return res
